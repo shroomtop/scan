@@ -1,0 +1,339 @@
+<!--LEGAL-DNA:{"jurisdiction":"US/MN/Baxter","export_tag":"EAR99","spdx":"MIT","artifact_time":1751620557146,"def_pub":"OIN","consent_req":true,"city":"Baxter"}-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Universal Device & Network Toolkit • Shroomtop420™</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#171d2e">
+  <meta name="description" content="PWA: WebSocket/MQTT, API Client, Bluetooth, USB, Sensors, Speedtest (Shroomtop420™)">
+  <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;Device+Network Toolkit&quot;,&quot;short_name&quot;:&quot;NetKit&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;background_color&quot;:&quot;#171d2e&quot;}">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; script-src 'self' https://cdn.tailwindcss.com; img-src 'self' data: blob:; connect-src 'self' ws: wss:; font-src 'self' https://fonts.gstatic.com; object-src 'none'; base-uri 'self';">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html { background: #171d2e; }
+    body { color: #f3f5fa; }
+    .section { background: #21263b; border-radius: 1rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px #0004; }
+    .section h2 { color: #60a5fa; }
+    .scroll-x { overflow-x: auto; }
+    .input, input, textarea, select {
+      background: #242a41; color: #fafafa;
+      border-radius: 0.5rem; border: 1px solid #334155;
+      padding: 0.5em; font-size: 1em;
+    }
+    .input:focus, input:focus, textarea:focus, select:focus {
+      outline: 2px solid #60a5fa;
+    }
+    .btn {
+      background: #60a5fa; color: #192034; font-weight: bold;
+      border-radius: 0.5rem; padding: 0.5em 1.2em;
+      box-shadow: 0 2px 6px #0002;
+      margin-top: 0.5em;
+    }
+    .btn:active { background: #2563eb; }
+    .label { font-size: 0.95em; font-weight: 600; }
+    .status-ok { color: #34d399; }
+    .status-bad { color: #f87171; }
+    video, canvas, audio { width: 100%; max-width: 380px; border-radius: 0.75em; background: #0f172a; }
+    @media (max-width: 640px) {
+      .section { margin-left: 0; margin-right: 0; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-2 sm:p-6 font-sans">
+  <main id="main" class="w-full max-w-2xl mt-2">
+    <header class="mb-6 text-center">
+      <h1 class="text-2xl font-extrabold text-blue-400 mb-1">Universal Device & Network Toolkit</h1>
+      <p class="text-sm text-blue-200 mb-2">Test, connect, and debug: WebSocket • MQTT • API • Bluetooth • Sensors • Speed • Battery • More</p>
+    </header>
+
+    <!-- TABS -->
+    <nav class="flex flex-wrap gap-2 mb-4" aria-label="Toolkit Tabs">
+      <button class="btn" onclick="setTab('ws')">WebSocket/MQTT</button>
+      <button class="btn" onclick="setTab('api')">API Client</button>
+      <button class="btn" onclick="setTab('hw')">Bluetooth/USB/NFC</button>
+      <button class="btn" onclick="setTab('net')">Net Test</button>
+      <button class="btn" onclick="setTab('sensor')">Sensors/Camera</button>
+      <button class="btn" onclick="setTab('sys')">System Info</button>
+    </nav>
+
+    <!-- WebSocket/MQTT/SSE -->
+    <section class="section p-4" id="tab-ws" style="display:none">
+      <h2 class="text-xl font-bold mb-2">WebSocket / MQTT / SSE Playground</h2>
+      <label class="label" for="wsUrl">URL (ws://... or wss://...)</label>
+      <input id="wsUrl" class="input w-full mb-2" placeholder="wss://echo.websocket.org or ws://localhost:9001">
+      <label class="label" for="wsProto">Protocol (optional):</label>
+      <input id="wsProto" class="input w-full mb-2" placeholder="mqtt, sse, custom, leave blank for ws">
+      <button class="btn" onclick="connectWS()">Connect</button>
+      <span id="wsStatus" class="ml-2"></span>
+      <div id="wsControls" style="display:none">
+        <textarea id="wsSend" class="input w-full mt-2" rows="2" placeholder="Message..."></textarea>
+        <button class="btn" onclick="wsSendMsg()">Send</button>
+        <button class="btn" onclick="wsClose()">Close</button>
+        <div class="scroll-x mt-2 bg-black bg-opacity-20 rounded p-2 text-sm h-32 overflow-y-auto" id="wsLog"></div>
+      </div>
+    </section>
+
+    <!-- API Client -->
+    <section class="section p-4" id="tab-api" style="display:none">
+      <h2 class="text-xl font-bold mb-2">REST / GraphQL API Client</h2>
+      <input class="input w-full mb-2" id="apiUrl" placeholder="https://api.example.com/resource">
+      <select class="input mb-2" id="apiMethod">
+        <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+      </select>
+      <textarea id="apiBody" class="input w-full mb-2" rows="3" placeholder="Request body (JSON, GraphQL, optional)"></textarea>
+      <button class="btn" onclick="runApiClient()">Send</button>
+      <div id="apiStatus" class="mt-2"></div>
+      <pre class="scroll-x mt-2 text-xs p-2 bg-black bg-opacity-30 rounded" id="apiResult"></pre>
+    </section>
+
+    <!-- Bluetooth/USB/Serial/NFC -->
+    <section class="section p-4" id="tab-hw" style="display:none">
+      <h2 class="text-xl font-bold mb-2">Bluetooth / USB / Serial / NFC Testbed</h2>
+      <div class="flex flex-col gap-3">
+        <button class="btn" onclick="btScan()">Scan Bluetooth Devices</button>
+        <button class="btn" onclick="usbScan()">List USB Devices</button>
+        <button class="btn" onclick="serialScan()">Serial Ports</button>
+        <button class="btn" onclick="nfcScan()">NFC Scan</button>
+      </div>
+      <div id="hwOut" class="scroll-x mt-3 text-xs p-2 bg-black bg-opacity-20 rounded"></div>
+    </section>
+
+    <!-- Network Speed/Jitter Test -->
+    <section class="section p-4" id="tab-net" style="display:none">
+      <h2 class="text-xl font-bold mb-2">Network Speed & Jitter Test</h2>
+      <button class="btn" onclick="runSpeedTest()">Run Speed Test</button>
+      <div class="mt-2" id="speedOut"></div>
+    </section>
+
+    <!-- Camera / Mic / Sensors -->
+    <section class="section p-4" id="tab-sensor" style="display:none">
+      <h2 class="text-xl font-bold mb-2">Camera / Mic / Sensor Access</h2>
+      <div class="mb-2">
+        <button class="btn" onclick="startCam()">Camera</button>
+        <button class="btn" onclick="startMic()">Mic</button>
+        <button class="btn" onclick="stopAV()">Stop</button>
+      </div>
+      <video id="video" autoplay playsinline style="display:none;" aria-label="Camera preview"></video>
+      <audio id="audio" controls style="display:none;" aria-label="Mic preview"></audio>
+      <div class="mt-3">
+        <button class="btn" onclick="getSensors()">Get Device Sensors</button>
+        <pre id="sensors" class="scroll-x mt-2 text-xs p-2 bg-black bg-opacity-20 rounded"></pre>
+      </div>
+    </section>
+
+    <!-- Battery / Network Info -->
+    <section class="section p-4" id="tab-sys" style="display:none">
+      <h2 class="text-xl font-bold mb-2">Battery & Network Info</h2>
+      <button class="btn" onclick="getBattNet()">Refresh Info</button>
+      <div id="batt" class="mt-2"></div>
+      <div id="netinfo" class="mt-2"></div>
+    </section>
+  </main>
+
+  <script>
+    // Tab System
+    let curTab = 'ws';
+    function setTab(tab) {
+      for(const t of ['ws','api','hw','net','sensor','sys']) {
+        document.getElementById('tab-'+t).style.display = (t===tab) ? '' : 'none';
+      }
+      curTab = tab;
+    }
+    setTab('ws');
+
+    // --- WebSocket/SSE/MQTT
+    let ws;
+    function connectWS() {
+      const url = wsUrl.value.trim();
+      const proto = wsProto.value.trim().toLowerCase();
+      wsLog.innerText = '';
+      wsStatus.innerText = '';
+      if(proto==='mqtt') { wsStatus.innerText="MQTT: Not supported in-browser (client-side only)"; return; }
+      if(proto==='sse') {
+        try {
+          const ev = new EventSource(url);
+          wsStatus.innerText = 'SSE Connected';
+          wsControls.style.display = 'none';
+          ev.onmessage = e => wsLog.innerText += `[SSE] ${e.data}\n`;
+          ev.onerror = e => wsStatus.innerText = 'SSE Error';
+        } catch(e) { wsStatus.innerText = 'SSE failed'; }
+        return;
+      }
+      if(!/^ws(s)?:\/\//.test(url)) { wsStatus.innerText = "Invalid ws:// or wss:// URL"; return; }
+      try {
+        ws = new WebSocket(url, proto||undefined);
+        ws.onopen = () => {
+          wsStatus.innerHTML = '<span class="status-ok">Connected</span>';
+          wsControls.style.display = '';
+        };
+        ws.onclose = () => {
+          wsStatus.innerHTML = '<span class="status-bad">Closed</span>';
+          wsControls.style.display = 'none';
+        };
+        ws.onerror = e => wsStatus.innerHTML = '<span class="status-bad">Error</span>';
+        ws.onmessage = e => wsLog.innerText += `[MSG] ${e.data}\n`;
+      } catch(e) { wsStatus.innerHTML = '<span class="status-bad">Failed</span>'; }
+    }
+    function wsSendMsg() {
+      try { ws.send(wsSend.value); wsLog.innerText += `[SEND] ${wsSend.value}\n`; } catch {}
+    }
+    function wsClose() { try { ws.close(); } catch{} }
+
+    // --- API Client (REST/GraphQL)
+    async function runApiClient() {
+      apiStatus.innerText = "Loading...";
+      apiResult.innerText = "";
+      try {
+        let m = apiMethod.value;
+        let url = apiUrl.value.trim();
+        let body = apiBody.value.trim();
+        let opt = {method:m, headers:{'Content-Type':'application/json'}};
+        if(m!=='GET' && body) opt.body = body;
+        let r = await fetch(url, opt);
+        let text = await r.text();
+        apiResult.innerText = text;
+        apiStatus.innerText = `Status: ${r.status}`;
+      } catch(e) { apiStatus.innerText = "Error: "+e; }
+    }
+
+    // --- Bluetooth/USB/Serial/NFC
+    async function btScan() {
+      hwOut.innerText = "Scanning for Bluetooth devices...";
+      try {
+        let d = await navigator.bluetooth.requestDevice({acceptAllDevices:true});
+        hwOut.innerText = JSON.stringify(d, null, 2);
+      } catch(e) { hwOut.innerText = "BT Error: "+e; }
+    }
+    async function usbScan() {
+      hwOut.innerText = "Scanning for USB devices...";
+      try {
+        let ds = await navigator.usb.getDevices();
+        hwOut.innerText = JSON.stringify(ds, null, 2);
+      } catch(e) { hwOut.innerText = "USB Error: "+e; }
+    }
+    async function serialScan() {
+      hwOut.innerText = "Scanning for Serial ports...";
+      try {
+        let ports = await navigator.serial.getPorts();
+        hwOut.innerText = JSON.stringify(ports, null, 2);
+      } catch(e) { hwOut.innerText = "Serial Error: "+e; }
+    }
+    async function nfcScan() {
+      hwOut.innerText = "Scanning for NFC tags...";
+      if(!('NDEFReader' in window)) { hwOut.innerText = "NFC not supported"; return; }
+      try {
+        const nfc = new NDEFReader();
+        await nfc.scan();
+        nfc.onreading = e => hwOut.innerText = "NFC Tag: "+JSON.stringify(e, null, 2);
+        nfc.onerror = e => hwOut.innerText = "NFC Error: "+e;
+      } catch(e) { hwOut.innerText = "NFC Error: "+e; }
+    }
+
+    // --- Network Speed/Jitter Test (downloads random data)
+    async function runSpeedTest() {
+      speedOut.innerText = "Testing download speed...";
+      let start = Date.now(), jitterArr = [];
+      let sizes = [128*1024, 256*1024, 512*1024];
+      let sum = 0;
+      for (let sz of sizes) {
+        let buf = new Uint8Array(sz).map(()=>Math.floor(Math.random()*255));
+        let t0 = Date.now();
+        try {
+          await fetch('https://speed.hetzner.de/100MB.bin?'+Math.random(), {method:'GET', cache:'no-store'});
+        } catch {} // Just to simulate, not real download
+        let t1 = Date.now();
+        let d = t1-t0; sum += d; jitterArr.push(d);
+      }
+      let avg = sum/sizes.length;
+      let jit = Math.max(...jitterArr)-Math.min(...jitterArr);
+      speedOut.innerHTML = `Avg Latency: <b>${avg|0} ms</b> <br>Jitter: <b>${jit|0} ms</b> <br><span class="text-xs text-blue-300">*True speed test requires file downloads.<br>Result here = latency/jitter only.</span>`;
+    }
+
+    // --- Camera/Mic/Sensors
+    let mediaStream = null;
+    async function startCam() {
+      stopAV();
+      video.style.display = '';
+      audio.style.display = 'none';
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({video:true});
+        video.srcObject = mediaStream;
+      } catch(e) { video.style.display='none'; alert("Camera error: "+e); }
+    }
+    async function startMic() {
+      stopAV();
+      audio.style.display = '';
+      video.style.display = 'none';
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({audio:true});
+        audio.srcObject = mediaStream;
+      } catch(e) { audio.style.display='none'; alert("Mic error: "+e); }
+    }
+    function stopAV() {
+      if (mediaStream) { mediaStream.getTracks().forEach(t=>t.stop()); }
+      video.style.display='none';
+      audio.style.display='none';
+    }
+    function getSensors() {
+      let out = {};
+      if ('DeviceOrientationEvent' in window) {
+        window.addEventListener('deviceorientation', e=>{
+          out.orientation = {alpha:e.alpha, beta:e.beta, gamma:e.gamma};
+          sensors.innerText = JSON.stringify(out, null, 2);
+        }, {once:true});
+      } else out.orientation = "Not supported";
+      if ('DeviceMotionEvent' in window) {
+        window.addEventListener('devicemotion', e=>{
+          out.motion = {acc:e.acceleration, rot:e.rotationRate};
+          sensors.innerText = JSON.stringify(out, null, 2);
+        }, {once:true});
+      } else out.motion = "Not supported";
+      if ('AmbientLightSensor' in window) {
+        try {
+          const sensor = new AmbientLightSensor();
+          sensor.onreading = () => { out.ambient = sensor.illuminance; sensors.innerText = JSON.stringify(out, null, 2); };
+          sensor.onerror = e => { out.ambient = "Err"; sensors.innerText = JSON.stringify(out, null, 2); };
+          sensor.start();
+        } catch {}
+      } else out.ambient = "Not supported";
+      sensors.innerText = JSON.stringify(out, null, 2);
+    }
+
+    // --- Battery & Network Info
+    async function getBattNet() {
+      // Battery
+      if (navigator.getBattery) {
+        let batt = await navigator.getBattery();batt.onlevelchange = batt.onchargingchange = () => getBattNet();
+        document.getElementById('batt').innerHTML = `
+          <div><b>Battery:</b> ${Math.round(batt.level*100)}%</div>
+          <div>Charging: <span class="${batt.charging?'status-ok':'status-bad'}">${batt.charging?'Yes':'No'}</span></div>
+        `;
+      } else {
+        document.getElementById('batt').innerHTML = "<b>Battery:</b> Not supported";
+      }
+      // Network Info
+      let nfo = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
+      if(nfo) {
+        document.getElementById('netinfo').innerHTML = `
+          <div><b>Type:</b> ${nfo.type || 'n/a'}</div>
+          <div><b>Effective Type:</b> ${nfo.effectiveType || 'n/a'}</div>
+          <div><b>Downlink:</b> ${nfo.downlink || 'n/a'} Mbps</div>
+          <div><b>RTT:</b> ${nfo.rtt || 'n/a'} ms</div>
+          <div><b>Save Data:</b> ${nfo.saveData ? 'Yes' : 'No'}</div>
+        `;
+      } else {
+        document.getElementById('netinfo').innerHTML = "<b>Network Info:</b> Not supported";
+      }
+    }
+    // Init battery/network info at load
+    window.addEventListener('DOMContentLoaded',()=>getBattNet());
+
+    // Accessibility: keyboard tab trap on tab navigation
+    document.body.addEventListener('keydown', e=>{
+      if(e.key==='Tab' && e.target.classList.contains('btn')) e.target.blur();
+    });
+  </script>
+</body>
+</html>
